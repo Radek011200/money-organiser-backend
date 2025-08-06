@@ -9,7 +9,7 @@ class Expense extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'amount', 'category_id', 'date'];
+    protected $fillable = ['name', 'amount', 'category_id', 'date', 'user_id'];
 
     /**
      * Get the category that owns the expense.
@@ -19,4 +19,11 @@ class Expense extends Model
         return $this->belongsTo(Category::class);
     }
 
+    /**
+     * Get the user that owns the expense.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

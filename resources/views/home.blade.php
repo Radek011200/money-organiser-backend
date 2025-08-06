@@ -1,6 +1,13 @@
 <x-layout>
     <x-slot:heading>
-        Home Page
+        Money Organiser Dashboard
     </x-slot:heading>
-    <h1>Hello from the Home Page.</h1>
+
+    <!-- Vue App Mount Point -->
+    <div id="app">
+        <home-page></home-page>
+    </div>
+
+    <!-- Scripts -->
+    @vite(['resources/js/app.js'])
 </x-layout>

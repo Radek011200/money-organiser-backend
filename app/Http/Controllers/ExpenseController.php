@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Expense;
+use Illuminate\Support\Facades\Auth;
 
 class ExpenseController extends Controller
 {
@@ -12,7 +13,7 @@ class ExpenseController extends Controller
      */
     public function index()
     {
-        $expenses = Expense::all();
+        $expenses = Expense::where('user_id', Auth::id())->get();
         return response()->json(['expenses' => $expenses]);
     }
 
@@ -28,6 +29,26 @@ class ExpenseController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'date' => 'required|date',
         ]);
+
+        // Sprawdzenie, czy kategoria jest kategorią wydatków
+        if (!empty($validatedData['category_id'])) {
+            $category = \App\Models\Category::findOrFail($validatedData['category_id']);
+            if ($category->is_income) {
+                return response()->json([
+                    'message' => 'Wybrana kategoria nie jest kategorią wydatków',
+                ], 422);
+            }
+
+            // Check if the category belongs to the authenticated user
+            if ($category->user_id !== Auth::id()) {
+                return response()->json([
+                    'message' => 'Nie masz dostępu do tej kategorii',
+                ], 403);
+            }
+        }
+
+        // Add user_id to the validated data
+        $validatedData['user_id'] = Auth::id();
 
         // Zapis wydatku w bazie danych
         $expense = Expense::create($validatedData);
@@ -45,7 +66,7 @@ class ExpenseController extends Controller
      */
     public function show(string $id)
     {
-        $expense = Expense::findOrFail($id);
+        $expense = Expense::where('user_id', Auth::id())->findOrFail($id);
         return response()->json(['expense' => $expense]);
     }
 
@@ -54,7 +75,7 @@ class ExpenseController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $expense = Expense::findOrFail($id);
+        $expense = Expense::where('user_id', Auth::id())->findOrFail($id);
 
         $validatedData = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -62,6 +83,23 @@ class ExpenseController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'date' => 'sometimes|required|date',
         ]);
+
+        // Sprawdzenie, czy kategoria jest kategorią wydatków
+        if (!empty($validatedData['category_id'])) {
+            $category = \App\Models\Category::findOrFail($validatedData['category_id']);
+            if ($category->is_income) {
+                return response()->json([
+                    'message' => 'Wybrana kategoria nie jest kategorią wydatków',
+                ], 422);
+            }
+
+            // Check if the category belongs to the authenticated user
+            if ($category->user_id !== Auth::id()) {
+                return response()->json([
+                    'message' => 'Nie masz dostępu do tej kategorii',
+                ], 403);
+            }
+        }
 
         $expense->update($validatedData);
 
@@ -76,7 +114,7 @@ class ExpenseController extends Controller
      */
     public function destroy(string $id)
     {
-        $expense = Expense::findOrFail($id);
+        $expense = Expense::where('user_id', Auth::id())->findOrFail($id);
         $expense->delete();
 
         return response()->json([
